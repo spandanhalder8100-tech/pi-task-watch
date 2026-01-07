@@ -1,0 +1,49 @@
+name: Build Windows App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.2'
+        channel: 'stable'
+        
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        
+    - name: Enable Flutter Windows
+      run: flutter config --enable-windows-desktop
+      
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Build Windows App
+      run: flutter build windows --release
+      
+    - name: Create ZIP archive
+      run: |
+        cd build/windows/x64/runner/Release
+        Compress-Archive -Path * -DestinationPath ../../../../../PI_Task_Watch_Windows_v1.0.23.zip
+      shell: pwsh
+      
+    - name: Upload Windows Build
+      uses: actions/upload-artifact@v4
+      with:
+        name: PI-Task-Watch-Windows
+        path: PI_Task_Watch_Windows_v1.0.23.zip
+        retention-days: 30
